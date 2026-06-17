@@ -1,0 +1,214 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": [
+        "Hi",
+        "Hello",
+        "Hey",
+        "Is anyone there?",
+        "Good morning",
+        "Good evening"
+      ],
+      "responses": [
+        "Hello! Welcome to IT Helpdesk. How can I assist you today?",
+        "Hi! I can help you with technical issues, software, hardware, and network problems."
+      ]
+    },
+
+    {
+      "tag": "goodbye",
+      "patterns": [
+        "Bye",
+        "Goodbye",
+        "See you later",
+        "I have to go"
+      ],
+      "responses": [
+        "Goodbye! Have a great day.",
+        "See you later. Feel free to contact IT support anytime."
+      ]
+    },
+
+    {
+      "tag": "thanks",
+      "patterns": [
+        "Thanks",
+        "Thank you",
+        "I appreciate it"
+      ],
+      "responses": [
+        "You're welcome! Happy to help.",
+        "Glad I could solve your issue."
+      ]
+    },
+
+    {
+      "tag": "wifi_problem",
+      "patterns": [
+        "My wifi is not working",
+        "Unable to connect to wifi",
+        "Wifi connection problem",
+        "Internet is not connecting"
+      ],
+      "responses": [
+        "Try restarting your router and reconnecting to the WiFi network.",
+        "Check if WiFi is enabled and verify your network password."
+      ]
+    },
+
+    {
+      "tag": "internet_issue",
+      "patterns": [
+        "Internet is slow",
+        "No internet connection",
+        "Internet not working",
+        "Network problem"
+      ],
+      "responses": [
+        "Check your router connection and restart the network device.",
+        "Try disconnecting and reconnecting to the network. If the issue continues, contact your ISP."
+      ]
+    },
+
+    {
+      "tag": "password_reset",
+      "patterns": [
+        "I forgot my password",
+        "How to reset password",
+        "Password is not working",
+        "Cannot login"
+      ],
+      "responses": [
+        "Use the password reset option to create a new password.",
+        "Make sure your username and password are correct. Contact admin if your account is locked."
+      ]
+    },
+
+    {
+      "tag": "computer_slow",
+      "patterns": [
+        "My computer is slow",
+        "Laptop is running slow",
+        "System is hanging",
+        "PC performance issue"
+      ],
+      "responses": [
+        "Close unnecessary applications and restart your system.",
+        "Check storage space and remove unused files to improve performance."
+      ]
+    },
+
+    {
+      "tag": "software_installation",
+      "patterns": [
+        "How to install software",
+        "Need help installing application",
+        "Software installation problem",
+        "Install program"
+      ],
+      "responses": [
+        "Download software only from trusted sources and follow the installation steps.",
+        "Make sure your system meets the software requirements before installing."
+      ]
+    },
+
+    {
+      "tag": "application_error",
+      "patterns": [
+        "Application is not opening",
+        "Software is crashing",
+        "Program stopped working",
+        "App error"
+      ],
+      "responses": [
+        "Try restarting the application and check for available updates.",
+        "Reinstall the application if the issue continues."
+      ]
+    },
+
+    {
+      "tag": "printer_problem",
+      "patterns": [
+        "Printer is not working",
+        "Cannot print document",
+        "Printer issue",
+        "Printer not connected"
+      ],
+      "responses": [
+        "Check printer power, cable connection, and printer status.",
+        "Make sure the correct printer driver is installed."
+      ]
+    },
+
+    {
+      "tag": "virus_security",
+      "patterns": [
+        "My computer has virus",
+        "System infected",
+        "Malware problem",
+        "Virus warning"
+      ],
+      "responses": [
+        "Run a security scan using trusted antivirus software.",
+        "Avoid opening suspicious files and unknown links."
+      ]
+    },
+
+    {
+      "tag": "phishing_email",
+      "patterns": [
+        "I received suspicious email",
+        "Is this email fake?",
+        "Phishing message",
+        "Unknown email link"
+      ],
+      "responses": [
+        "Do not click unknown links or download attachments from suspicious emails.",
+        "Verify the sender before sharing any personal information."
+      ]
+    },
+
+    {
+      "tag": "system_update",
+      "patterns": [
+        "How to update system",
+        "Need software update",
+        "Windows update problem",
+        "Update my computer"
+      ],
+      "responses": [
+        "Go to system settings and check for available updates.",
+        "Keep your operating system updated for security and performance."
+      ]
+    },
+
+    {
+      "tag": "hardware_issue",
+      "patterns": [
+        "Keyboard not working",
+        "Mouse problem",
+        "Hardware issue",
+        "Device not detected"
+      ],
+      "responses": [
+        "Check the device connection and restart your computer.",
+        "Try reconnecting the hardware device or updating drivers."
+      ]
+    },
+
+    {
+      "tag": "technical_support",
+      "patterns": [
+        "I need technical help",
+        "I have a computer problem",
+        "Need IT support",
+        "Help me fix issue"
+      ],
+      "responses": [
+        "Please describe your technical issue and I will try to help.",
+        "Tell me the problem you are facing with your system."
+      ]
+    }
+  ]
+}

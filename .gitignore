@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+.env/
+
+# Database
+users.db
+support.db
+# Streamlit
+.streamlit/
+README.md
+LICENSE
+chatbot.png
+# Model files (optional if too large)
+# data.pth
