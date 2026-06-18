@@ -1,136 +1,219 @@
 # Installing of Libraries
 import numpy as np
-import pandas as pd
-import random
 import json
 import torch
 import torch.nn as nn
 import nltk
+from torch.utils.data import Dataset, DataLoader
 from model import NeuralNet
-from nltk.stem.porter import PorterStemmer
+from nltk_utils import tokenize, bag_of_words
 nltk.download('punkt_tab')
 nltk.download('punkt')
-from torch.utils.data import Dataset,DataLoader
-from nltk_utils import tokenize,bag_of_words,stemmer
-import os, json
-
-import json
-
-with open("intents.json", "r", encoding="utf-8") as f:
-    data = json.load(f)
-
-print("JSON loaded successfully!")
-
-    
-    
-all_words=[]
-tags=[]
-xy=[]
-import json
-
-# Open and load the intents.json file
+# Load intents
 with open("intents.json", "r", encoding="utf-8") as f:
     intents = json.load(f)
 
-# Now you can use intents['intents']
+
+all_words = []
+tags = []
+xy = []
 
 
-for intent in intents['intents']:
-    tag=intent["tag"]
+# Create training data
+for intent in intents["intents"]:
+    tag = intent["tag"]
     tags.append(tag)
     for pattern in intent["patterns"]:
-        w=tokenize(pattern)
-        all_words.extend(w)
-        xy.append((w,tag)) # pair of corresponding tokenized patterns and tag
-        
-        
-# ignore punctuation        
+        words = tokenize(pattern)
+        all_words.extend(words)
+        xy.append((words, tag))
+
+
+# Remove punctuation
 ignore_words = ['?', '.', '!']
-all_words_without_punctuation=[]
-for w in all_words:
-    if w not in ignore_words:
-        all_words_without_punctuation.append(w)
-        
-# remove duplicate patterns and tag and sort them
-all_words_without_punctuation=sorted(set(all_words_without_punctuation))
-tags=sorted(set(tags))
+all_words = [
+    w for w in all_words 
+    if w not in ignore_words
+]
 
-#Print
-print(len(xy), "patterns\n")
+
+# Remove duplicates
+all_words = sorted(set(all_words))
+tags = sorted(set(tags))
+
+
+print(len(xy), "patterns")
 print(len(tags), "tags:", tags)
-print(len(all_words), "unique stemmed words:", all_words_without_punctuation)
+print(len(all_words), "unique words")
 
-# Training Data
-X_train=[] # bag of words of patterned sentence
-Y_train=[] # contain labels of tags
 
-for (patterned_sentence,tag) in xy:
-    bag=bag_of_words(patterned_sentence,all_words_without_punctuation)
+# Create training data
+X_train = []
+Y_train = []
+
+
+for sentence, tag in xy:
+
+    bag = bag_of_words(sentence,all_words)
     X_train.append(bag)
-    label=tags.index(tag)
+    label = tags.index(tag)
     Y_train.append(label)
-    
-# Convert into numpy array
-X_train=np.array(X_train)
-Y_train=np.array(Y_train)
-
-# Hyper Parameters
-num_epochs=1000
-batch_size=8 # Number of samples the DataLoader will return per batch.
-learning_rate=0.001   
-input_size=len(X_train[0])
-hidden_size=8 # hidden layer
-output_size=len(tags) # output size=no of tags
-print(input_size,output_size)
 
 
-class chatdataset(Dataset):
-    def __init__(self): # initialize the dataset object
-        super().__init__()
-        self.n_samples=len(X_train)
-        self.X_data=X_train
-        self.Y_data=Y_train
-        
-    def __getitem__(self, index):
-        return self.X_data[index], self.Y_data[index]
+
+# Convert to tensors
+X_train = torch.tensor(X_train,dtype=torch.float32)
+
+Y_train = torch.tensor(Y_train,dtype=torch.long)
+
+
+
+# Hyper parameters
+
+num_epochs = 1000
+batch_size = 8
+learning_rate = 0.001
+
+
+input_size = len(X_train[0])
+
+# GRU needs bigger hidden state
+hidden_size = 128
+
+output_size = len(tags)
+
+
+print(
+    "Input:",
+    input_size,
+    "Output:",
+    output_size
+)
+
+
+
+# Dataset class
+
+class ChatDataset(Dataset):
+
+    def __init__(self):
+
+        self.n_samples = len(X_train)
+
+        self.X_data = X_train
+        self.Y_data = Y_train
+
+
+    def __getitem__(self,index):
+
+        return (
+            self.X_data[index],
+            self.Y_data[index]
+        )
+
+
     def __len__(self):
+
         return self.n_samples
-    
-dataset=chatdataset()    
-train_loader=DataLoader(dataset=dataset,batch_size=batch_size,shuffle=True,num_workers=0) # shuffle : Prevents the model from learning the order of training data , Number of subprocesses used for data loading.num_workers = 0 means data will be loaded in the main thread (safe for Windows and small datasets).
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model=NeuralNet(input_size,hidden_size,output_size) # define model
 
-# define loss and optimizer
-criterion=nn.CrossEntropyLoss()
-optimizer=torch.optim.Adam(model.parameters(),lr=learning_rate)
 
-# Train the model
+dataset = ChatDataset()
+
+
+train_loader = DataLoader(dataset,batch_size=batch_size,shuffle=True,num_workers=0)
+
+device = torch.device("cuda" if torch.cuda.is_available()else "cpu")
+
+
+print("Using:",device)
+
+model = NeuralNet(input_size,hidden_size,output_size).to(device)
+
+
+
+# Loss and optimizer
+
+criterion = nn.CrossEntropyLoss()
+
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=learning_rate
+)
+
+
+
+# Training
+
 for epoch in range(num_epochs):
-    for [input_batch,output_batch] in train_loader:
-        input_batch=input_batch.to(device)
-        output_batch=output_batch.to(dtype=torch.long).to(device)
-        # Forward Propagation
-        actual_output_batch=model(input_batch)
-        loss=criterion(actual_output_batch,output_batch)
-        # Backward Propagation
-        optimizer.zero_grad()  # clear previous gradients
-        loss.backward()        # compute gradients via backprop
-        optimizer.step()       # update model weights
-    
-    if((epoch+1)%100==0):
-        print(f"{epoch+1}/{num_epochs} : Loss = {loss.item():.4f}")    
-        
-print(f"Final Loss = {loss.item():.4f}")            
-data={
+
+    for words, labels in train_loader:
+
+        words = words.to(device)
+        labels = labels.to(device)
+
+
+        # forward
+        output = model(words)
+
+
+        loss = criterion(
+            output,
+            labels
+        )
+
+
+        # backward
+        optimizer.zero_grad()
+
+        loss.backward()
+
+        optimizer.step()
+
+
+
+    if (epoch + 1) % 100 == 0:
+
+        print(
+            f"Epoch {epoch+1}/{num_epochs}, Loss={loss.item():.4f}"
+        )
+
+
+
+print(
+    f"Final Loss = {loss.item():.4f}"
+)
+
+
+
+# Save model
+
+data = {
+
     "model_state": model.state_dict(),
+
     "input_size": input_size,
+
     "hidden_size": hidden_size,
+
     "output_size": output_size,
-    "all_words": all_words_without_punctuation,
+
+    "all_words": all_words,
+
     "tags": tags
+
 }
-FILE="data.pth"
-torch.save(data,FILE)
-print(f'training complete. file saved to {FILE}')
+
+
+FILE = "data.pth"
+
+
+torch.save(
+    data,
+    FILE
+)
+
+
+print(
+    f"Training complete. Saved {FILE}"
+)

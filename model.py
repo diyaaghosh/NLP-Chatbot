@@ -1,22 +1,51 @@
-# installing libraries
 import torch
 import torch.nn as nn
 
-# feedforward neural network (MLP) [ for that portion revise pytorch ]
+
 class NeuralNet(nn.Module):
-    def __init__(self, input_size,hidden_size,output_size):
-        super(NeuralNet,self).__init__()
-        self.l1=nn.Linear(input_size,hidden_size)
-        self.l2=nn.Linear(hidden_size,hidden_size)
-        self.l3=nn.Linear(hidden_size,output_size)
-        self.relu=nn.ReLU() # ReLU activation introduces non-linearity.
-        
-    # Defines how data flows through the network    
-    def forward(self,x):
-        out=self.l1(x)
-        out=self.relu(out) # Pass input x through the first linear layer, then apply ReLU.
-        out=self.l2(out)
-        out=self.relu(out) # Pass input out through the second linear layer, then apply ReLU.
-        out=self.l3(out)
-        # Final layer outputs raw scores (logits) for each class.No softmax here — PyTorch's CrossEntropyLoss automatically applies it during training. 
+    def __init__(self, input_size, hidden_size, output_size):
+        super(NeuralNet, self).__init__()
+
+        self.hidden_size = hidden_size
+
+        # convert bag of words features into hidden representation
+        self.embedding = nn.Linear(input_size, hidden_size)
+
+        # GRU layer
+        self.gru = nn.GRU(
+            input_size=hidden_size,
+            hidden_size=hidden_size,
+            batch_first=True,
+            num_layers=2,
+            dropout=0.2
+        )
+
+        # classifier
+        self.fc = nn.Linear(hidden_size, output_size)
+
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.2)
+
+
+    def forward(self, x):
+
+        # x shape: (batch, features)
+        x = self.embedding(x)
+
+        x = self.relu(x)
+
+        # GRU expects:
+        # (batch, sequence, features)
+        x = x.unsqueeze(1)
+
+        out, hidden = self.gru(x)
+
+        # take last hidden state
+        out = hidden[-1]
+
+        out = self.dropout(out)
+
+        out = self.fc(out)
+
+        # logits (no softmax)
         return out

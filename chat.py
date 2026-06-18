@@ -1,11 +1,22 @@
+import streamlit as st
+
+# MUST be first Streamlit command
+st.set_page_config(
+    page_title="Nexas IT Help Desk",
+    page_icon="💙",
+    layout="wide"
+)
+
+
 import nltk
-nltk.download('punkt')
+nltk.download("punkt")
+
 
 import random
 import json
 import torch
-import streamlit as st
 import time as t
+
 
 from database import (
     save_chat,
@@ -15,8 +26,12 @@ from database import (
     register
 )
 
+
 from model import NeuralNet
-from nltk_utils import bag_of_words, tokenize
+from nltk_utils import (
+    bag_of_words,
+    tokenize
+)
 
 
 
@@ -32,27 +47,22 @@ device = torch.device(
 
 
 # =============================
-# Login System
+# Session User
 # =============================
 
 if "user_id" not in st.session_state:
-
     st.session_state.user_id = None
 
 
 
+# =============================
+# Login/Register
+# =============================
+
 if st.session_state.user_id is None:
 
 
-    st.set_page_config(
-        page_title="Nexas Login",
-        page_icon="🔐"
-    )
-
-
-    st.title(
-        "🔐 Nexas IT Help Desk"
-    )
+    st.title("🔐 Nexas IT Help Desk")
 
 
     mode = st.selectbox(
@@ -113,7 +123,6 @@ if st.session_state.user_id is None:
 
             if user:
 
-
                 st.session_state.user_id = user
 
                 st.rerun()
@@ -126,7 +135,6 @@ if st.session_state.user_id is None:
                 )
 
 
-
     st.stop()
 
 
@@ -134,16 +142,24 @@ if st.session_state.user_id is None:
 
 
 # =============================
-# Load Model
+# Load intents
 # =============================
 
 with open(
     "intents.json",
+    "r",
     encoding="utf-8"
 ) as f:
 
     intents = json.load(f)
 
+
+
+
+
+# =============================
+# Load GRU Model
+# =============================
 
 
 data = torch.load(
@@ -153,11 +169,15 @@ data = torch.load(
 
 
 input_size = data["input_size"]
+
 hidden_size = data["hidden_size"]
+
 output_size = data["output_size"]
 
 all_words = data["all_words"]
+
 tags = data["tags"]
+
 
 
 
@@ -165,13 +185,15 @@ model = NeuralNet(
     input_size,
     hidden_size,
     output_size
-).to(device)
+)
 
 
 model.load_state_dict(
     data["model_state"]
 )
 
+
+model.to(device)
 
 model.eval()
 
@@ -180,16 +202,8 @@ model.eval()
 
 
 # =============================
-# Page
+# UI
 # =============================
-
-
-st.set_page_config(
-    page_title="Nexas IT Help Desk",
-    page_icon="💙",
-    layout="wide"
-)
-
 
 
 st.title(
@@ -205,9 +219,8 @@ st.caption(
 
 
 # =============================
-# Session Messages
+# Load Messages
 # =============================
-
 
 if "messages" not in st.session_state:
 
@@ -224,7 +237,6 @@ if "messages" not in st.session_state:
 # Sidebar
 # =============================
 
-
 with st.sidebar:
 
 
@@ -235,6 +247,7 @@ with st.sidebar:
 
 
     st.divider()
+
 
 
     if st.button(
@@ -273,7 +286,7 @@ with st.sidebar:
 
 
 # =============================
-# Display History
+# Show old chats
 # =============================
 
 
@@ -292,8 +305,9 @@ for message in st.session_state.messages:
 
 
 
+
 # =============================
-# Chat Input
+# Chat
 # =============================
 
 
@@ -303,21 +317,16 @@ user_input = st.chat_input(
 
 
 
-
 if user_input:
 
 
     # User message
 
-
-    with st.chat_message(
-        "user"
-    ):
+    with st.chat_message("user"):
 
         st.markdown(
             user_input
         )
-
 
 
     save_chat(
@@ -337,9 +346,8 @@ if user_input:
 
 
 
-
     # =============================
-    # NLP Processing
+    # NLP
     # =============================
 
 
@@ -354,39 +362,49 @@ if user_input:
     )
 
 
-    X = X.reshape(
-        1,
-        input_size
+    # Convert numpy -> torch
+
+    X = torch.tensor(
+        X,
+        dtype=torch.float32
     )
 
 
-    X = torch.from_numpy(
-        X
-    ).to(device)
+    # add batch dimension
+
+    X = X.unsqueeze(0)
+
+
+    X = X.to(device)
 
 
 
-    output = model(X)
 
 
-    result = torch.max(
+    # Model prediction
+
+    with torch.no_grad():
+
+        output = model(X)
+
+
+
+    probabilities = torch.softmax(
         output,
         dim=1
     )
 
 
-    predicted = result[1]
+    confidence, predicted = torch.max(
+        probabilities,
+        dim=1
+    )
+
 
 
     tag = tags[
         predicted.item()
     ]
-
-
-    probability = torch.softmax(
-        output,
-        dim=1
-    )[0][predicted.item()]
 
 
 
@@ -398,12 +416,13 @@ if user_input:
 
 
 
+
     # =============================
     # Response
     # =============================
 
 
-    if probability.item() > 0.75:
+    if confidence.item() > 0.75:
 
 
         response = (
@@ -414,7 +433,7 @@ if user_input:
         for intent in intents["intents"]:
 
 
-            if tag == intent["tag"]:
+            if intent["tag"] == tag:
 
 
                 response = random.choice(
@@ -430,16 +449,15 @@ if user_input:
 
         response = (
             "Sorry, I could not understand. "
-            "Please explain your issue differently."
+            "Please explain your problem again."
         )
 
 
 
 
 
-
     # =============================
-    # Bot Reply
+    # Bot reply animation
     # =============================
 
 
@@ -448,7 +466,7 @@ if user_input:
     ):
 
 
-        placeholder = st.empty()
+        box = st.empty()
 
 
         text = ""
@@ -456,19 +474,22 @@ if user_input:
 
         for word in response.split():
 
+
             text += word + " "
 
             t.sleep(0.05)
 
 
-            placeholder.markdown(
+            box.markdown(
                 text + "▌"
             )
 
 
-        placeholder.markdown(
+        box.markdown(
             text
         )
+
+
 
 
 
@@ -477,6 +498,7 @@ if user_input:
         "assistant",
         response
     )
+
 
 
     st.session_state.messages.append(
