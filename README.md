@@ -309,12 +309,5 @@ Delete History (Optional)
 
 ---
 
-## License
 
-This project is licensed under the MIT License.
 
----
-
-## Author
-
-Developed as an NLP and Deep Learning project using PyTorch, Streamlit, and SQLite.
